@@ -96,7 +96,7 @@ class CRM_Sectorsupportsearch_FindExpert {
    */
   private static function validateDateRanges($fields, &$errors) {
     if (isset($fields['deceased_date_from']) && isset($fields['deceased_date_to'])) {
-      if (!empty($fields['deceased_date_to'])) {
+      if (!empty($fields['deceased_date_to']) && !empty($fields['deceased_date_from'])) {
         $dateTo = new DateTime($fields['deceased_date_to']);
         $dateFrom = new DateTime($fields['deceased_date_from']);
         if ($dateTo < $dateFrom) {
@@ -105,7 +105,7 @@ class CRM_Sectorsupportsearch_FindExpert {
       }
     }
     if (isset($fields['expert_status_date_from']) && isset($fields['expert_status_date_to'])) {
-      if (!empty($fields['expert_status_date_to'])) {
+      if (!empty($fields['expert_status_date_to']) && !empty($fields['expert_status_from'])) {
         if ($fields['expert_status_date_to'] < $fields['expert_status_date_from']) {
           $errors['expert_status_date_to'] = ts('Expert status date to has to be later than the expert status date date from.');
         }

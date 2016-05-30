@@ -37,6 +37,10 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
   private $_restrictionsActivityTypeId = NULL;
   private $_scheduledActivityStatusValue = NULL;
 
+  // properties for valid case types and case status for latest main activity
+  private $_validCaseTypes = array();
+  private $_validCaseStatus = array();
+
   /**
    * CRM_Sectorsupportsearch_Form_Search_FindExpert constructor.
    * @param $formValues
@@ -46,6 +50,8 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     $this->getGenericSkillsList();
     $this->setRequiredCustomTables();
     $this->setRequiredCustomColumns();
+    $this->setValidCaseStatus();
+    $this->setValidCaseTypes();
 
     parent::__construct($formValues);
   }
@@ -317,7 +323,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     return "DISTINCT(contact_a.id) AS contact_id, contact_a.display_name AS display_name, 
     main.main_sector, exp.".$this->_expStatusColumn." AS expert_status, '' AS restrictions, '' as contact_age,
     '' as expert_status_date_range, 0 as main_activity_count, phone.phone AS phone, contact_a.contact_type AS contact_type, 
-    contact_a.gender_id AS gender_id";
+    contact_a.gender_id AS gender_id, '' as last_main";
   }
 
   /**
@@ -484,22 +490,24 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
    */
   private function setDateRangeClauses($fieldName, $columnName) {
     if (isset($this->_formValues[$fieldName.'_from']) && !empty($this->_formValues[$fieldName.'_from'])) {
+      $fromDate = new DateTime($this->_formValues[$fieldName.'_from']);
       $this->_whereIndex++;
       $fromIndex = $this->_whereIndex;
-      $this->_whereParams[$fromIndex] = array($this->_formValues[$fieldName.'_from'], 'String');
+      $this->_whereParams[$fromIndex] = array($fromDate->format('Y-m-d'), 'String');
     }
     if (isset($this->_formValues[$fieldName.'_to']) && !empty($this->_formValues[$fieldName.'_to'])) {
+      $toDate = new DateTime($this->_formValues[$fieldName.'_to']);
       $this->_whereIndex++;
       $toIndex = $this->_whereIndex;
-      $this->_whereParams[$toIndex] = array($this->_formValues[$fieldName.'_to'], 'String');
+      $this->_whereParams[$toIndex] = array($toDate->format('Y-m-d'), 'String');
     }
-    if ($fromIndex && $toIndex) {
+    if (isset($fromIndex) && isset($toIndex)) {
       $this->_whereClauses[] = $columnName.' BETWEEN %'.$fromIndex.' AND %'.$toIndex;
     } else {
-      if ($fromIndex) {
+      if (isset($fromIndex)) {
         $this->_whereClauses[] = $columnName.' >= %'.$fromIndex;
       }
-      if ($toIndex) {
+      if (isset($toIndex)) {
         $this->_whereClauses[] = $columnName.' <= %'.$toIndex;
       }
     }
@@ -569,13 +577,13 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
       $fromDate = new DateTime();
       $ageFromYears = new DateInterval('P'.$this->_formValues['age_from'].'Y');
       $fromDate->sub($ageFromYears);
-      $result['from'] = $fromDate->format('Y-m-d').' 00:00:00';
+      $result['from'] = $fromDate->format('Y-m-d');
     }
     if (isset($this->_formValues['age_to']) && !empty($this->_formValues['age_to'])) {
       $toDate = new DateTime();
       $ageToYears = new DateInterval('P'.$this->_formValues['age_to'].'Y');
       $toDate->sub($ageToYears);
-      $result['to'] = $toDate->format('Y-m-d').' 23:59:59';
+      $result['to'] = $toDate->format('Y-m-d');
     }
     return $result;
   }
@@ -633,9 +641,16 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
   function alterRow(&$row) {
     // todo : add number of main
     $row['restrictions'] = $this->setRestrictions($row['contact_id']);
-    $row['latest_main'] = $this->setLatestMain($row['contact_id']);
+    $row['last_main'] = $this->setLastMain($row['contact_id']);
     $row['contact_age'] = $this->calculateContactAge($row['contact_id']);
-    $row['main_activity_count'] = CRM_Threepeas_BAO_PumCaseRelation::getExpertNumberOfCases($row['contact_id']);
+    if (method_exists('CRM_Threepeas_BAO_PumCaseRelation', 'getExpertNumberOfCases')) {
+      $mainCount = CRM_Threepeas_BAO_PumCaseRelation::getExpertNumberOfCases($row['contact_id']);
+    }
+    if ($mainCount) {
+      $row['main_activity_count'] = CRM_Threepeas_BAO_PumCaseRelation::getExpertNumberOfCases($row['contact_id']);
+    } else {
+      $row['main_activity_count'] = "";
+    }
     //$row['expert_status_date_range'] = $this->buildExpertStatusDateRange();
   }
 
@@ -671,7 +686,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
    * @return string
    * @throws Exception when no relationship type Expert found
    */
-  private function setLatestMain($contactId) {
+  private function setLastMain($contactId) {
     // build query for civicrm_relationship where type = Expert and case id is not empty
     // joined with case data of the right case type and status
     try {
@@ -902,6 +917,46 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
       }
     } catch (CiviCRM_API3_Exception $ex) {
       throw new Exception('Could not find option group for activity status in '.__METHOD__.', error from API OptionGroup Getvalue: '.$ex->getMessage());
+    }
+  }
+
+  /**
+   * Method to set the valid case status for latest main activity
+   *
+   * @throws Exception when no option group case status found
+   */
+  private function setValidCaseStatus() {
+    $requiredCaseStatus = array('Completed', 'Debriefing', 'Execution', 'Matching', 'Preparation');
+    try {
+      $caseStatusOptionGroupId = civicrm_api3('OptionGroup', 'Getvalue', array('name' => 'case_status', 'return' => 'id'));
+      $foundCaseStatus = civicrm_api3('OptionValue', 'Get', array('option_group_id' => $caseStatusOptionGroupId, 'is_active' => 1));
+      foreach ($foundCaseStatus['values'] as $caseStatus) {
+        if (in_array($caseStatus['name'], $requiredCaseStatus)) {
+          $this->_validCaseStatus[$caseStatus['value']] = $caseStatus['name'];
+        }
+      }
+    } catch (CiviCRM_API3_Exception $ex) {
+      throw new Exception('Could not find option group for case status in '.__METHOD__.', error from API OptionGroup Getvalue: '.$ex->getMessage());
+    }
+  }
+
+  /**
+   * Method to set the valid case types for latest main activity
+   *
+   * @throws Exception when no option group case type found
+   */
+  private function setValidCaseTypes() {
+    $requiredCaseTypes = array('Advice', 'Business', 'RemoteCoaching', 'Seminar');
+    try {
+      $caseTypeOptionGroupId = civicrm_api3('OptionGroup', 'Getvalue', array('name' => 'case_type', 'return' => 'id'));
+      $foundCaseTypes = civicrm_api3('OptionValue', 'Get', array('option_group_id' => $caseTypeOptionGroupId, 'is_active' => 1));
+      foreach ($foundCaseTypes['values'] as $caseType) {
+        if (in_array($caseType['name'], $requiredCaseTypes)) {
+          $this->_validCaseTypes[$caseType['value']] = $caseType['name'];
+        }
+      }
+    } catch (CiviCRM_API3_Exception $ex) {
+      throw new Exception('Could not find option group for case type in '.__METHOD__.', error from API OptionGroup Getvalue: '.$ex->getMessage());
     }
   }
 }
