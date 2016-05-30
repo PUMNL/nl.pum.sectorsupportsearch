@@ -6,14 +6,14 @@
 return array (
   0 => 
   array (
-    'name' => 'CRM_Sectorsupportsearch_Form_Search_FindContact',
+    'name' => 'CRM_Sectorsupportsearch_Form_Search_FindExpert',
     'entity' => 'CustomSearch',
     'params' => 
     array (
       'version' => 3,
-      'label' => 'FindContact',
-      'description' => 'FindContact (nl.pum.sectorsupportsearch)',
-      'class_name' => 'CRM_Sectorsupportsearch_Form_Search_FindContact',
+      'label' => 'PUM Find Expert Sector Support',
+      'description' => 'Find PUM Expert for Sector Support',
+      'class_name' => 'CRM_Sectorsupportsearch_Form_Search_FindExpert',
     ),
   ),
 );

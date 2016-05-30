@@ -1,13 +1,13 @@
 <?php
 /**
- * Custom search to Find Contact from Sector Support role
+ * Custom search to Find Expert from Sector Support role
  * PUM Senior Experts
  *
  * @author Erik Hommel (CiviCooP) <erik.hommel@civicoop.org>
  * @date 24 May 2016
  * @license AGPL-3.0
  */
-class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_Search_Custom_Base implements CRM_Contact_Form_Search_Interface {
+class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Search_Custom_Base implements CRM_Contact_Form_Search_Interface {
 
   // select list that need to be at class level
   private $_languagesWithLevelList = array();
@@ -33,8 +33,12 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
   private $_whereParams = array();
   private $_whereIndex = NULL;
 
+  // property for restriction activity type id
+  private $_restrictionsActivityTypeId = NULL;
+  private $_scheduledActivityStatusValue = NULL;
+
   /**
-   * CRM_Sectorsupportsearch_Form_Search_FindContact constructor.
+   * CRM_Sectorsupportsearch_Form_Search_FindExpert constructor.
    * @param $formValues
    */
   function __construct(&$formValues) {
@@ -53,7 +57,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
    * @return void
    */
   function buildForm(&$form) {
-    CRM_Utils_System::setTitle(ts('Find Contact(s) for PUM Sector Support'));
+    CRM_Utils_System::setTitle(ts('Find Expert(s) for PUM Sector Support'));
 
     // search on sector
     $sectorList = $this->getSectorList();
@@ -105,7 +109,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
       array('id' => 'group_id', 'multiple' => 'multiple', 'title' => ts('- select -'))
     );
 
-    // search on expert status and status start/end date
+    // search on expert status
     $expertStatusList = $this->getExpertStatusList();
     $form->add('select', 'expert_status_id', ts('ExpertStatus(es)'), $expertStatusList, FALSE,
       array('id' => 'expert_status_id', 'multiple' => 'multiple', 'title' => ts('- select -'))
@@ -113,7 +117,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
 
     // search on CV Mutation
     $cvMutationList = array(
-      1 => ts('Only contacts with CV In Mutation YES)'),
+      1 => ts('Only contacts with CV In Mutation YES'),
       2 => ts('Only contacts with CV In Mutation NO'),
       3 => ts('All contacts')
     );
@@ -127,82 +131,6 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
       'group_id', 'expert_status_id', 'expert_status_date_from', 'expert_status_date_to', 'cv_mutation_id'));
 
     $form->addButtons(array(array('type' => 'refresh', 'name' => ts('Search'), 'isDefault' => TRUE,),));
-  }
-
-  /**
-   * Function to add validation rules
-   */
-  function addRules() {
-    $this->addFormRule(array('CRM_Sectorsupportsearch_Form_Search_FindContact', 'validateDeceased'));
-    $this->addFormRule(array('CRM_Sectorsupportsearch_Form_Search_FindContact', 'validateDateRange'));
-    $this->addFormRule(array('CRM_Sectorsupportsearch_Form_Search_FindContact', 'validateAgeRange'));
-  }
-
-  /**
-   * Method to validate that no deceased dates are set if only non-deceased selected
-   *
-   * @param $fields
-   * @return bool
-   * @static
-   */
-  public static function validateDeceased($fields) {
-    if (isset($fields['deceased_id']) && $fields['deceased_id'] == 1) {
-      if (isset($fields['deceased_date_from']) && !empty($fields['deceased_date_from'])) {
-        $errors['deceased_date_from'] = ts('You can not set a deceased date range if you are only searching for contacts that are not deceased.');
-        return $errors;
-      }
-      if (isset($fields['deceased_date_to']) && !empty($fields['deceased_date_to'])) {
-        $errors['deceased_date_to'] = ts('You can not set a deceased date range if you are only searching for contacts that are not deceased.');
-        return $errors;
-      }
-    }
-    return TRUE;
-  }
-
-  /**
-   * Method to validate age range
-   *
-   * @param $fields
-   * @return bool
-   * @static
-   */
-  public static function validateAgeRange($fields) {
-    if (isset($fields['age_from']) && isset($fields['age_to'])) {
-      if (!empty($fields['age_to'])) {
-        if ($fields['age_to'] < $fields['age_from']) {
-          $errors['age_to'] = ts('Age to has to be bigger than the age from.');
-          return $errors;
-        }
-      }
-    }
-    return TRUE;
-  }
-
-  /**
-   * Validate date ranges: to date can not be earlier than from date
-   * 
-   * @param $fields
-   * @return bool
-   * @static
-   */
-  public static function validateDateRange($fields) {
-    if (isset($fields['deceased_date_from']) && isset($fields['deceased_date_to'])) {
-      if (!empty($fields['deceased_date_to'])) {
-        if ($fields['deceased_date_to'] < $fields['deceased_date_from']) {
-          $errors['deceased_date_to'] = ts('Deceased date to has to be later than the deceased date from.');
-          return $errors;
-        }
-      }
-    }
-    if (isset($fields['expert_status_date_from']) && isset($fields['expert_status_date_to'])) {
-      if (!empty($fields['expert_status_date_to'])) {
-        if ($fields['expert_status_date_to'] < $fields['expert_status_date_from']) {
-          $errors['expert_status_date_to'] = ts('Expert status date to has to be later than the expert status date date from.');
-          return $errors;
-        }
-      }
-    }
-    return TRUE;
   }
 
   /**
@@ -232,10 +160,11 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
     try {
       $optionValues = civicrm_api3('OptionValue', 'Get', array('option_group_id' => 'gender'));
       foreach ($optionValues['values'] as $optionValue) {
-        $result[$optionValue['value']] = $result[$optionValue['label']];
+        $result[$optionValue['value']] = $optionValue['label'];
       }
     } catch (CiviCRM_API3_Exception $ex) {}
     asort($result);
+    return $result;
   }
 
   /**
@@ -255,7 +184,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
         'option_group_id' => $expertStatusOptionGroupId,
         'is_active' => 1,
         'options' => array('limit' => 9999)));
-      foreach ($optionValues as $optionValue) {
+      foreach ($optionValues['values'] as $optionValue) {
         $result[$optionValue['value']] = $optionValue['label'];
       }
     } catch (CiviCRM_API3_Exception $ex) {}
@@ -271,12 +200,13 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
   private function getGroupList() {
     $result = array();
     try {
-      $groups = civicrm_api3('Group', 'Get', array('is_active' => 1, 'option' => array('limit' => '9999')));
+      $groups = civicrm_api3('Group', 'Get', array('is_active' => 1, 'options' => array('limit' => '9999')));
       foreach ($groups['values'] as $group) {
-        $result[$groups['id']] = $result[$group['title']];
+        $result[$group['id']] = $group['title'];
       }
     } catch (CiviCRM_API3_Exception $ex) {}
     asort($result);
+    return $result;
   }
 
   /**
@@ -353,10 +283,11 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
       ts('Age') => 'contact_age',
       ts('Phone') => 'phone',
       ts('Contact Type') => 'contact_type',
+      ts('Main Activities') => 'main_activity_count',
       ts('Last Main Activity') => 'last_main',
       ts('Main Sector') => 'main_sector',
       ts('Expert Status') => 'expert_status',
-      ts('Expert Status Date From - To') => 'expert_status_date_range',
+      //ts('Expert Status Date From - To') => 'expert_status_date_range',
       ts('Has Restrictions') => 'restrictions'
     );
     return $columns;
@@ -385,7 +316,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
   function select() {
     return "DISTINCT(contact_a.id) AS contact_id, contact_a.display_name AS display_name, 
     main.main_sector, exp.".$this->_expStatusColumn." AS expert_status, '' AS restrictions, '' as contact_age,
-    '' as expert_status_date_range, phone.phone AS phone, contact_a.contact_type AS contact_type, 
+    '' as expert_status_date_range, 0 as main_activity_count, phone.phone AS phone, contact_a.contact_type AS contact_type, 
     contact_a.gender_id AS gender_id";
   }
 
@@ -470,10 +401,10 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
       foreach ($this->_formValues['expert_status_id'] as $statusId) {
         $this->_whereIndex++;
         $statusIds[$this->_whereIndex] = $statusId;
-        $this->_whereParams[$this->_whereIndex] = array($statusId, 'Integer');
+        $this->_whereParams[$this->_whereIndex] = array($statusId, 'String');
       }
       if (!empty($statusIds)) {
-        $this->_whereClauses[] = '(exp.'.$this->_expStatusColumn.' IN('.implode(', ', $statusIds).'))';
+        $this->_whereClauses[] = '(exp.'.$this->_expStatusColumn.' IN("'.implode('", "', $statusIds).'"))';
       }
     }
   }
@@ -555,12 +486,12 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
     if (isset($this->_formValues[$fieldName.'_from']) && !empty($this->_formValues[$fieldName.'_from'])) {
       $this->_whereIndex++;
       $fromIndex = $this->_whereIndex;
-      $this->_whereParams[$fromIndex] = array($this->_formValues[$fieldName.'_from'], 'Date');
+      $this->_whereParams[$fromIndex] = array($this->_formValues[$fieldName.'_from'], 'String');
     }
     if (isset($this->_formValues[$fieldName.'_to']) && !empty($this->_formValues[$fieldName.'_to'])) {
       $this->_whereIndex++;
       $toIndex = $this->_whereIndex;
-      $this->_whereParams[$toIndex] = array($this->_formValues[$fieldName.'_to'], 'Date');
+      $this->_whereParams[$toIndex] = array($this->_formValues[$fieldName.'_to'], 'String');
     }
     if ($fromIndex && $toIndex) {
       $this->_whereClauses[] = $columnName.' BETWEEN %'.$fromIndex.' AND %'.$toIndex;
@@ -615,13 +546,15 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
    */
   private function addAgeWhereClauses() {
     if (isset($this->_formValues['age_from']) || isset($this->_formValues['age_to'])) {
-      $birthDates = $this->calculateBirthDatesForAge();
-      $this->_whereIndex++;
-      $fromIndex = $this->_whereIndex;
-      $this->_whereParams[$this->_whereIndex] = array($birthDates['from'], 'Date');
-      $this->_whereIndex++;
-      $this->_whereParams[$this->_whereIndex] = array($birthDates['to'], 'Date');
-      $this->_whereClauses[] = '(contact_a.birth_date BETWEEN %'.$this->_whereIndex.' AND %'.$fromIndex.')';
+      if (!empty($this->_formValues['age_from']) || !empty($this->_formValues['age_to'])) {
+        $birthDates = $this->calculateBirthDatesForAge();
+        $this->_whereIndex++;
+        $fromIndex = $this->_whereIndex;
+        $this->_whereParams[$this->_whereIndex] = array($birthDates['from'], 'String');
+        $this->_whereIndex++;
+        $this->_whereParams[$this->_whereIndex] = array($birthDates['to'], 'String');
+        $this->_whereClauses[] = '(contact_a.birth_date BETWEEN %' . $this->_whereIndex . ' AND %' . $fromIndex . ')';
+      }
     }
   }
 
@@ -636,13 +569,13 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
       $fromDate = new DateTime();
       $ageFromYears = new DateInterval('P'.$this->_formValues['age_from'].'Y');
       $fromDate->sub($ageFromYears);
-      $result['from'] = $fromDate->format('Y-m-d');
+      $result['from'] = $fromDate->format('Y-m-d').' 00:00:00';
     }
     if (isset($this->_formValues['age_to']) && !empty($this->_formValues['age_to'])) {
       $toDate = new DateTime();
       $ageToYears = new DateInterval('P'.$this->_formValues['age_to'].'Y');
       $toDate->sub($ageToYears);
-      $result['to'] = $toDate->format('Y-m-d');
+      $result['to'] = $toDate->format('Y-m-d').' 23:59:59';
     }
     return $result;
   }
@@ -687,7 +620,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
    * @return string, template path (findable through Smarty template path)
    */
   function templateFile() {
-    return 'CRM/Sectorsupportsearch/FindContact.tpl';
+    return 'CRM/Sectorsupportsearch/FindExpert.tpl';
   }
 
   /**
@@ -702,7 +635,8 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
     $row['restrictions'] = $this->setRestrictions($row['contact_id']);
     $row['latest_main'] = $this->setLatestMain($row['contact_id']);
     $row['contact_age'] = $this->calculateContactAge($row['contact_id']);
-    $row['expert_status_date_range'] = $this->buildExpertStatusDateRange();
+    $row['main_activity_count'] = CRM_Threepeas_BAO_PumCaseRelation::getExpertNumberOfCases($row['contact_id']);
+    //$row['expert_status_date_range'] = $this->buildExpertStatusDateRange();
   }
 
   private function buildExpertStatusDateRange() {
@@ -721,8 +655,9 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
   private function calculateContactAge($contactId) {
     $birthDate = civicrm_api3('Contact', 'Getvalue', array('id' => $contactId, 'return' => 'birth_date'));
     if (!empty($birthDate)) {
-      $birthDate = date('d-m-Y', strtotime($birthDate));
-      return CRM_Utils_Date::calculateAge($birthDate);
+      $dateOfBirth = new DateTime($birthDate);
+      $age = $dateOfBirth->diff(new DateTime('now'));
+      return $age->y;
     }
     return FALSE;
   }
@@ -921,11 +856,52 @@ class CRM_Sectorsupportsearch_Form_Search_FindContact extends CRM_Contact_Form_S
   private function addInitialWhereClauses() {
     $this->_whereClauses[] = '(contact_a.contact_sub_type LIKE %1)';
     $this->_whereParams[1] = array('%Expert%', 'String');
-    $this->_whereClauses[] = '(contact_a.is_deceased = %2)';
-    $this->_whereParams[2] = array(0, 'Integer');
-    $this->_whereClauses[] = '(exp.'.$this->_expStatusColumn.' NOT IN(%3, %4))';
-    $this->_whereParams[3] = array('Exit', 'String');
-    $this->_whereParams[4] = array('Suspended', 'String');
-    $this->_whereIndex = 4;
+    $this->_whereIndex = 1;
+  }
+
+  /**
+   * Method to set activity type properties
+   *
+   * @throws Exception when no option group activity type found
+   */
+  private function setActivityTypes() {
+    try {
+      $activityTypeOptionGroupId = civicrm_api3('OptionGroup', 'Getvalue', array('name' => 'activity_type', 'return' => 'id'));
+      $restrictionsParams = array(
+        'option_group_id' => $activityTypeOptionGroupId,
+        'name' => 'Restrictions',
+        'return' => 'value'
+      );
+      try {
+        $this->_restrictionsActivityTypeId = civicrm_api3('OptionValue', 'Getvalue', $restrictionsParams);
+      } catch (CiviCRM_API3_Exception $ex) {
+        $this->_restrictionsActivityTypeId = NULL;
+      }
+    } catch (CiviCRM_API3_Exception $ex) {
+      throw new Exception('Could not find option group for activity type in '.__METHOD__.', error from API OptionGroup Getvalue: '.$ex->getMessage());
+    }
+  }
+
+  /**
+   * Method to set activity status properties
+   *
+   * @throws Exception when no option group activity status found
+   */
+  private function setActivityStatus() {
+    try {
+      $activityStatusOptionGroupId = civicrm_api3('OptionGroup', 'Getvalue', array('name' => 'activity_status', 'return' => 'id'));
+      $scheduledParams = array(
+        'option_group_id' => $activityStatusOptionGroupId,
+        'name' => 'Scheduled',
+        'return' => 'value'
+      );
+      try {
+        $this->_scheduledActivityStatusValue = civicrm_api3('OptionValue', 'Getvalue', $scheduledParams);
+      } catch (CiviCRM_API3_Exception $ex) {
+        $this->_scheduledActivityStatusValue = NULL;
+      }
+    } catch (CiviCRM_API3_Exception $ex) {
+      throw new Exception('Could not find option group for activity status in '.__METHOD__.', error from API OptionGroup Getvalue: '.$ex->getMessage());
+    }
   }
 }

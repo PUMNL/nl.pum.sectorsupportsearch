@@ -112,43 +112,35 @@
           </div>
         {/if}
 
-        {if $form.overall_string}
-          <div class="crm-section overall-section">
-            <div class="messages status no-popup help">
-              <div class="icon inform-icon"></div>
-              {ts}You can search the expert data on a string.
-              The default behaviour is it will search for everything you enter in this field. So if you enter <em>ecological farm</em> it will search for that complete text string.<br />
-              If you want to search for <em>ecological</em> OR <em>farm</em> you should put brackets around your search string and separate the words with comma's. The field should now have the input <em>(ecological, farm)</em>.</br>
-              If you want to search for <em>ecological</em> AND <em>farm</em> as separate words you should put curly brackets around your search string and separate the words with comma's. The field should now have the input <em>{literal}{ecological, farm}{/literal}</em>.
-              {/ts}
-            </div>
+        {if $form.age_from or $form.age_to}
+          <div class="crm-section age-range">
             <div class="label">
-              <label for="overall-string">{$form.overall_string.label}</label>
+              <label for="age_from">{ts}Age Range from...{/ts}</label>
             </div>
-            <div class="content" id="overall-string">
-              {$form.overall_string.html}
+            <div class="content" id="age-from">
+              {$form.age_from.html}
             </div>
             <div class="clear"></div>
             <div class="label">
-              <label for="ignore_cases">{$form.ignore_cases.label}</label>
+              <label for="age_to">{ts}...to{/ts}</label>
             </div>
-            <div class="content" id="ignore-cases">
-              {$form.ignore_cases.html}
+            <div class="content" id="age-to">
+              {$form.age_to.html}
             </div>
             <div class="clear"></div>
           </div>
         {/if}
 
-        {if $form.countries_visited}
-          <div class="crm-section countries_visited-section">
+        {if $form.gender_id}
+          <div class="crm-section gender-section">
             <div class="label">
-              <label for="countries_visited-select">{ts}Countries visited in Work History{/ts}</label>
+              <label for="gender-select">{ts}Gender(s){/ts}</label>
             </div>
-            <div class="content" id="countries_visited-select">
-              {$form.countries_visited.html}
+            <div class="content" id="gender-select">
+              {$form.gender_id.html}
               {literal}
                 <script type="text/javascript">
-                  cj("select#countries_visited").crmasmSelect({
+                  cj("select#gender_id").crmasmSelect({
                     respectParents: true
                   });
                 </script>
@@ -156,6 +148,90 @@
             </div>
             <div class="clear"></div>
           </div>
+        {/if}
+
+        {if $form.group_id}
+          <div class="crm-section group-section">
+            <div class="label">
+              <label for="group-select">{ts}Group(s){/ts}</label>
+            </div>
+            <div class="content" id="group-select">
+              {$form.group_id.html}
+              {literal}
+                <script type="text/javascript">
+                  cj("select#group_id").crmasmSelect({
+                    respectParents: true
+                  });
+                </script>
+              {/literal}
+            </div>
+            <div class="clear"></div>
+          </div>
+        {/if}
+
+        {if $form.expert_status_id}
+          <div class="crm-section expert-status-section">
+            <div class="label">
+              <label for="expert-status-select">{ts}Expert Status(es){/ts}</label>
+            </div>
+            <div class="content" id="group-select">
+              {$form.expert_status_id.html}
+              {literal}
+                <script type="text/javascript">
+                  cj("select#expert_status_id").crmasmSelect({
+                    respectParents: true
+                  });
+                </script>
+              {/literal}
+            </div>
+            <div class="clear"></div>
+          </div>
+        {/if}
+
+        {if $form.cv_mutation_id}
+          <fieldset><legend>{ts}CV in Mutation{/ts}</legend>
+            <div class="crm-section cv-mutation-section">
+              <div class="label">
+                <label for="cv-mutation-radio">{ts}CV in Mutation{/ts}</label>
+              </div>
+              <div class="content" id="cv-mutation-radio">
+                {$form.cv_mutation_id.html}
+              </div>
+              <div class="clear"></div>
+            </div>
+          </fieldset>
+        {/if}
+
+        {if $form.deceased_id}
+          <fieldset><legend>{ts}What to do with Deceased Contacts{/ts}</legend>
+            <div class="crm-section deceased-radio-section">
+              <div class="label">
+                <label for="deceased-radio">{ts}Include/Exclude{/ts}</label>
+              </div>
+              <div class="content" id="deceased-radio">
+                {$form.deceased_id.html}
+              </div>
+              <div class="clear"></div>
+            </div>
+            <div class="crm-section deceased-date-from-section">
+              <div class="label">
+                <label for="deceased-date-from">{ts}Deceased Date from...{/ts}</label>
+              </div>
+              <div class="content" id="deceased-date-from">
+                {include file="CRM/common/jcalendar.tpl" elementName='deceased_date_from'}
+              </div>
+              <div class="clear"></div>
+            </div>
+            <div class="crm-section deceased-date-to-section">
+              <div class="label">
+                <label for="deceased-date-to">{ts}to...{/ts}</label>
+              </div>
+              <div class="content" id="deceased-date-to">
+                {include file="CRM/common/jcalendar.tpl" elementName='deceased_date_to'}
+              </div>
+              <div class="clear"></div>
+            </div>
+          </fieldset>
         {/if}
 
         <div class="crm-submit-buttons">{include file="CRM/common/formButtons.tpl"}</div>

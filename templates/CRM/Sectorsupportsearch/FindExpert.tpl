@@ -1,10 +1,10 @@
-{* Template for "FindContact" custom search component. *}
+{* Template for "FindExpert" custom search component. *}
 {assign var="showBlock" value="'searchForm'"}
 {assign var="hideBlock" value="'searchForm_show','searchForm_hide'"}
 
 <div class="crm-form-block crm-search-form-block">
   <div id="searchForm">
-    {include file="CRM/Sectorsupportsearch/FindContactCriteria.tpl"}
+    {include file="CRM/Sectorsupportsearch/FindExpertCriteria.tpl"}
   </div>
 </div>
 

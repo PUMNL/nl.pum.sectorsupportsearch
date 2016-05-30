@@ -3,6 +3,19 @@
 require_once 'sectorsupportsearch.civix.php';
 
 /**
+ * Implments hook_civicrm_validateForm().
+ *
+ * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_validateForm
+ *
+ */
+function sectorsupportsearch_civicrm_validateForm( $formName, &$fields, &$files, &$form, &$errors ) {
+  if ($formName == 'CRM_Contact_Form_Search_Custom') {
+    $customClass = $form->getVar('_customClass');
+    CRM_Sectorsupportsearch_FindExpert::validateForm(get_class($customClass), $fields, $errors);
+  }
+}
+
+/**
  * Implements hook_civicrm_config().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_config
