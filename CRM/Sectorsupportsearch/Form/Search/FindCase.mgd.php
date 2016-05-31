@@ -12,7 +12,7 @@ return array (
     array (
       'version' => 3,
       'label' => 'Find PUM Cases',
-      'description' => 'Find PUM Cases for Sector Support',
+      'description' => 'Find PUM Cases for HRM',
       'class_name' => 'CRM_Sectorsupportsearch_Form_Search_FindCase',
     ),
   ),

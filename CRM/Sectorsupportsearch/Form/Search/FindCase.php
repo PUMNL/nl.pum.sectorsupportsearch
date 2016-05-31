@@ -53,7 +53,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindCase extends CRM_Contact_Form_Sear
    * @return void
    */
   function buildForm(&$form) {
-    CRM_Utils_System::setTitle(ts('Find Case(s) for PUM Sector Support'));
+    CRM_Utils_System::setTitle(ts('Find PUM Case(s) for HRM'));
 
     // search on (part of) contact name
     $form->add('text', 'contact_name', ts('(Part of) Contact Name'), false);

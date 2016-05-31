@@ -63,7 +63,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
    * @return void
    */
   function buildForm(&$form) {
-    CRM_Utils_System::setTitle(ts('Find Expert(s) for PUM Sector Support'));
+    CRM_Utils_System::setTitle(ts('Find PUM Contact for HRM'));
 
     // search on sector
     $sectorList = $this->getSectorList();
@@ -94,7 +94,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
 
     // search on deceased and deceased date range
     $deceasedList = array(
-      1 => ts('Only contacts that are not deceased)'),
+      1 => ts('Only contacts that are not deceased'),
       2 => ts('All contacts'),
       3 => ts('Only deceased contacts'),
     );
@@ -124,7 +124,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     // search on CV Mutation
     $cvMutationList = array(
       1 => ts('Only contacts with CV In Mutation YES'),
-      2 => ts('Only contacts with CV In Mutation NO'),
+      2 => ts('Only contacts with CV In Mutation NO and clear'),
       3 => ts('All contacts')
     );
     $form->addRadio('cv_mutation_id', ts('CV in Mutation?'), $cvMutationList, NULL, '<br />', TRUE);
@@ -287,10 +287,6 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
       ts('Contact Id') => 'contact_id',
       ts('Name') => 'display_name',
       ts('Age') => 'contact_age',
-      ts('Phone') => 'phone',
-      ts('Contact Type') => 'contact_type',
-      ts('Main Activities') => 'main_activity_count',
-      ts('Last Main Activity') => 'last_main',
       ts('Main Sector') => 'main_sector',
       ts('Expert Status') => 'expert_status',
       //ts('Expert Status Date From - To') => 'expert_status_date_range',
@@ -322,8 +318,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
   function select() {
     return "DISTINCT(contact_a.id) AS contact_id, contact_a.display_name AS display_name, 
     main.main_sector, exp.".$this->_expStatusColumn." AS expert_status, '' AS restrictions, '' as contact_age,
-    '' as expert_status_date_range, 0 as main_activity_count, phone.phone AS phone, contact_a.contact_type AS contact_type, 
-    contact_a.gender_id AS gender_id, '' as last_main";
+    '' as expert_status_date_range, contact_a.gender_id AS gender_id";
   }
 
   /**
@@ -336,7 +331,6 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     LEFT JOIN pum_expert_main_sector main ON contact_a.id = main.contact_id
     LEFT JOIN pum_expert_other_sector other ON contact_a.id = other.contact_id
     LEFT JOIN pum_expert_areas_expertise areas ON contact_a.id = areas.contact_id
-    LEFT JOIN civicrm_phone phone ON contact_a.id = phone.contact_id AND phone.is_primary = 1
     LEFT JOIN ".$this->_expertDataCustomGroupTable." exp ON contact_a.id = exp.entity_id
     LEFT JOIN ".$this->_languageCustomGroupTable." ll ON contact_a.id = ll.entity_id
     LEFT JOIN civicrm_group_contact gc ON contact_a.id = gc.contact_id AND gc.status = 'Added'";
@@ -385,15 +379,13 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
    */
   private function addCvMutationWhereClauses() {
     if (isset($this->_formValues['cv_mutation_id']) && !empty($this->_formValues['cv_mutation_id'])) {
+      $this->_whereIndex++;
+      $this->_whereParams[$this->_whereIndex] = array(1, 'Integer');
       if ($this->_formValues['cv_mutation_id'] == 1) {
-        $this->_whereIndex++;
-        $this->_whereParams[$this->_whereIndex] = array(1, 'Integer');
         $this->_whereClauses[] = 'exp.'.$this->_expCvMutationColumn.' = %'.$this->_whereIndex;
       }
       if ($this->_formValues['cv_mutation_id'] == 2) {
-        $this->_whereIndex++;
-        $this->_whereParams[$this->_whereIndex] = array(0, 'Integer');
-        $this->_whereClauses[] = 'exp.'.$this->_expCvMutationColumn.' = %'.$this->_whereIndex;
+        $this->_whereClauses[] = 'exp.'.$this->_expCvMutationColumn.' <> %'.$this->_whereIndex;
       }
     }
   }
@@ -640,16 +632,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
    */
   function alterRow(&$row) {
     $row['restrictions'] = $this->setRestrictions($row['contact_id']);
-    $row['last_main'] = $this->setLastMain($row['contact_id']);
     $row['contact_age'] = $this->calculateContactAge($row['contact_id']);
-    if (method_exists('CRM_Threepeas_BAO_PumCaseRelation', 'getExpertNumberOfCases')) {
-      $mainCount = CRM_Threepeas_BAO_PumCaseRelation::getExpertNumberOfCases($row['contact_id']);
-    }
-    if ($mainCount) {
-      $row['main_activity_count'] = CRM_Threepeas_BAO_PumCaseRelation::getExpertNumberOfCases($row['contact_id']);
-    } else {
-      $row['main_activity_count'] = "";
-    }
     //$row['expert_status_date_range'] = $this->buildExpertStatusDateRange();
   }
 
@@ -674,59 +657,6 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
       return $age->y;
     }
     return FALSE;
-  }
-
-  /**
-   * Method to retrieve the latest case for the contact of case type
-   * Advice, RemoteCoaching, Seminar or Business where case status is
-   * either Matching, Execution, Debriefing, Preparation or Completed
-   *
-   * @param int $contactId
-   * @return string
-   * @throws Exception when no relationship type Expert found
-   */
-  private function setLastMain($contactId) {
-    // build query for civicrm_relationship where type = Expert and case id is not empty
-    // joined with case data of the right case type and status
-    try {
-      $expertRelationshipTypeId = civicrm_api3('RelationshipType', 'Getvalue', array('name_a_b' => 'Expert', 'return' => 'id'));
-      $query = "SELECT cc.subject 
-        FROM civicrm_relationship rel 
-        JOIN civicrm_case cc ON rel.case_id = cc.id
-        LEFT JOIN civicrm_value_main_activity_info main ON rel.case_id = main.entity_id
-        WHERE rel.relationship_type_id = %1 AND rel.contact_id_b = %2 AND cc.is_deleted = %3";
-      $params = array(
-        1 => array($expertRelationshipTypeId, 'Integer'),
-        2 => array($contactId, 'Integer'),
-        3 => array(0, 'Integer')
-      );
-      $index = 3;
-      // set where clauses for case status
-      if (!empty($this->_validCaseStatus)) {
-        $statusValues = array();
-        foreach ($this->_validCaseStatus as $statusId => $statusName) {
-          $index++;
-          $params[$index] = array($statusId, 'Integer');
-          $statusValues[] = '%' . $index;
-        }
-        $query .= ' AND cc.status_id IN(' . implode(', ', $statusValues).')';
-      }
-      // set where clauses for case types
-      if (!empty($this->_validCaseTypes)) {
-        $typeValues = array();
-        foreach ($this->_validCaseTypes as $caseTypeId => $caseTypeName) {
-          $index++;
-          $params[$index] = array('%' . $caseTypeId . '%', 'String');
-          $typeValues[] = 'cc.case_type_id LIKE %' . $index;
-        }
-        $query .= ' AND ('.implode(' OR ', $typeValues).')';
-      }
-      $query .= ' ORDER BY main.start_date DESC LIMIT 1';
-      return CRM_Core_DAO::singleValueQuery($query, $params);
-    } catch (CiviCRM_API3_Exception $ex) {
-      throw new Exception('Could not find a relationship type with name Expert in '.__METHOD__
-        .', error from API RelationshipType Getvalue: '.$ex->getMessage());
-    }
   }
 
   /**

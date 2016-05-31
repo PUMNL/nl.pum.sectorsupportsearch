@@ -12,7 +12,7 @@ return array (
     array (
       'version' => 3,
       'label' => 'PUM Find Expert Sector Support',
-      'description' => 'Find PUM Expert for Sector Support',
+      'description' => 'Find PUM Contact for HRM',
       'class_name' => 'CRM_Sectorsupportsearch_Form_Search_FindExpert',
     ),
   ),

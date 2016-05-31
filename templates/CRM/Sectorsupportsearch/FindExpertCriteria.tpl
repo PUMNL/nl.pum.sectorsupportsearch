@@ -203,7 +203,7 @@
         {/if}
 
         {if $form.deceased_id}
-          <fieldset><legend>{ts}What to do with Deceased Contacts{/ts}</legend>
+          <fieldset><legend>{ts}Deceased Contacts{/ts}</legend>
             <div class="crm-section deceased-radio-section">
               <div class="label">
                 <label for="deceased-radio">{ts}Include/Exclude{/ts}</label>
