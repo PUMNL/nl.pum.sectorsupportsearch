@@ -117,7 +117,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
 
     // search on expert status
     $expertStatusList = $this->getExpertStatusList();
-    $form->add('select', 'expert_status_id', ts('ExpertStatus(es)'), $expertStatusList, FALSE,
+    $form->add('select', 'expert_status_id', ts('Expert Status(es)'), $expertStatusList, FALSE,
       array('id' => 'expert_status_id', 'multiple' => 'multiple', 'title' => ts('- select -'))
     );
 
@@ -639,7 +639,6 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
    * @return void
    */
   function alterRow(&$row) {
-    // todo : add number of main
     $row['restrictions'] = $this->setRestrictions($row['contact_id']);
     $row['last_main'] = $this->setLastMain($row['contact_id']);
     $row['contact_age'] = $this->calculateContactAge($row['contact_id']);

@@ -11,7 +11,15 @@ require_once 'sectorsupportsearch.civix.php';
 function sectorsupportsearch_civicrm_validateForm( $formName, &$fields, &$files, &$form, &$errors ) {
   if ($formName == 'CRM_Contact_Form_Search_Custom') {
     $customClass = $form->getVar('_customClass');
-    CRM_Sectorsupportsearch_FindExpert::validateForm(get_class($customClass), $fields, $errors);
+    $className = get_class($customClass);
+    switch ($className) {
+      case "CRM_Sectorsupportsearch_Form_Search_FindExpert":
+        CRM_Sectorsupportsearch_FindExpert::validateForm($fields, $errors);
+        break;
+      case "CRM_Sectorsupportsearch_Form_Search_FindCase":
+        CRM_Sectorsupportsearch_FindCase::validateForm($fields, $errors);
+        break;
+    }
   }
 }
 

@@ -9,15 +9,19 @@
  */
 class CRM_Sectorsupportsearch_FindExpert {
   
-  public static function validateForm($className, $fields, &$errors) {
-    if ($className == "CRM_Sectorsupportsearch_Form_Search_FindExpert") {
-      if (!self::validateCriteriaEntered($fields)) {
-        $errors['sector_id'] = ts("You have to enter at least one criterium to search on otherwise the list will get too long and take too much time");
-      }
-      self::validateDeceased($fields, $errors);
-      self::validateAgeRange($fields, $errors);
-      self::validateDateRanges($fields, $errors);
+  /**
+   * Method to process validateForm hook
+   * 
+   * @param $fields
+   * @param $errors
+   */
+  public static function validateForm($fields, &$errors) {
+    if (!self::validateCriteriaEntered($fields)) {
+      $errors['sector_id'] = ts("You have to enter at least one criterium to search on otherwise the list will get too long and take too much time");
     }
+    self::validateDeceased($fields, $errors);
+    self::validateAgeRange($fields, $errors);
+    self::validateDateRanges($fields, $errors);
   }
   /**
    * Method to check that at least one criterium is selected
