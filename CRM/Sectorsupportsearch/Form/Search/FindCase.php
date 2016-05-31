@@ -345,14 +345,22 @@ class CRM_Sectorsupportsearch_Form_Search_FindCase extends CRM_Contact_Form_Sear
    */
   private function addCaseTypesWhereClauses() {
     if (isset($this->_formValues['case_type_id'])) {
-      $caseTypeClauses = array();
-      foreach ($this->_formValues['case_type_id'] as $caseTypeId) {
-        $this->_whereIndex++;
-        $caseTypeClauses[] = 'cc.case_type_id LIKE %'.$this->_whereIndex;
-        $this->_whereParams[$this->_whereIndex] = array('%'.$caseTypeId.'%', 'String');
+      if (empty($this->_formValues['case_type_id'])) {
+        foreach ($this->_validCaseTypes as $caseTypeId => $caseTypeLabel) {
+          $this->_whereIndex++;
+          $caseTypeClauses[] = 'cc.case_type_id LIKE %'.$this->_whereIndex;
+          $this->_whereParams[$this->_whereIndex] = array('%'.$caseTypeId.'%', 'String');
+        }
+      } else {
+        $caseTypeClauses = array();
+        foreach ($this->_formValues['case_type_id'] as $caseTypeId) {
+          $this->_whereIndex++;
+          $caseTypeClauses[] = 'cc.case_type_id LIKE %' . $this->_whereIndex;
+          $this->_whereParams[$this->_whereIndex] = array('%' . $caseTypeId . '%', 'String');
+        }
       }
       if (!empty($caseTypeClauses)) {
-        $this->_whereClauses[] = '('.implode(' OR ', $caseTypeClauses).')';
+        $this->_whereClauses[] = '(' . implode(' OR ', $caseTypeClauses) . ')';
       }
     }
   }
