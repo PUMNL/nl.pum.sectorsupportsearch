@@ -35,19 +35,6 @@
         {$editTitle}
       </div><!-- /.crm-accordion-header -->
       <div class="crm-accordion-body">
-
-        {if $form.contact_name}
-          <div class="crm-section contact_name-section">
-            <div class="label">
-              <label for="contact-name">{$form.contact_name.label}</label>
-            </div>
-            <div class="content" id="contact-name">
-              {$form.contact_name.html}
-            </div>
-            <div class="clear"></div>
-          </div>
-        {/if}
-
         {if $form.expert_status_id}
           <div class="crm-section expert-status-section">
             <div class="label">

@@ -16,24 +16,7 @@ class CRM_Sectorsupportsearch_FindCase {
    * @param $errors
    */
   public static function validateForm($fields, &$errors) {
-    self::validateContactName($fields, $errors);
     self::validateDateRanges($fields, $errors);
-  }
-
-  /**
-   * Method to validate that contact name is at least 3 chars
-   *
-   * @param array $fields
-   * @param array $errors
-   * @access private
-   * @static
-   */
-  private static function validateContactName($fields, &$errors) {
-    if (isset($fields['contact_name']) && !empty($fields['contact_name'])) {
-      if (strlen($fields['contact_name']) < 3) {
-        $errors['contact_name'] = ts('You have to enter 3 characters or more to get search results (to avoid getting huge and time consuming searches).');
-      }
-    }
   }
 
   /**

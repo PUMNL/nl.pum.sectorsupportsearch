@@ -55,9 +55,6 @@ class CRM_Sectorsupportsearch_Form_Search_FindCase extends CRM_Contact_Form_Sear
   function buildForm(&$form) {
     CRM_Utils_System::setTitle(ts('Find PUM Case(s) for HRM'));
 
-    // search on (part of) contact name
-    $form->add('text', 'contact_name', ts('(Part of) Contact Name'), false);
-
     // search on expert status
     $expertStatusList = $this->getExpertStatusList();
     $form->add('select', 'expert_status_id', ts('Contact Status(es)'), $expertStatusList, FALSE,
@@ -238,8 +235,6 @@ class CRM_Sectorsupportsearch_Form_Search_FindCase extends CRM_Contact_Form_Sear
     $this->addInitialWhereClauses();
     // sector clauses if selected
     $this->addSectorWhereClauses();
-    // contact name clauses if selected
-    $this->addContactNameWhereClauses();
     // case types clauses if selected
     $this->addCaseTypesWhereClauses();
     // groups clauses if selected
@@ -362,17 +357,6 @@ class CRM_Sectorsupportsearch_Form_Search_FindCase extends CRM_Contact_Form_Sear
       if (!empty($caseTypeClauses)) {
         $this->_whereClauses[] = '(' . implode(' OR ', $caseTypeClauses) . ')';
       }
-    }
-  }
-
-  /**
-   * Method to add the area of expertise where clauses
-   */
-  private function addContactNameWhereClauses() {
-    if (isset($this->_formValues['contact_name']) && !empty($this->_formValues['contact_name'])) {
-      $this->_whereIndex++;
-      $this->_whereParams[$this->_whereIndex] = array('%'.$this->_formValues['contact_name'].'%', 'String');
-      $this->_whereClauses[] = '(exp.display_name LIKE %'.$this->_whereIndex.')';
     }
   }
 
