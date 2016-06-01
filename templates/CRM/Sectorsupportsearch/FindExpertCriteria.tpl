@@ -112,20 +112,22 @@
           </div>
         {/if}
 
-        {if $form.age_from or $form.age_to}
-          <div class="crm-section age-range">
+        {if $form.birth_date_from or $form.birth_date_to}
+          <div class="crm-section birth-date-from-section">
             <div class="label">
-              <label for="age_from">{ts}Age Range from...{/ts}</label>
+              <label for="birth-date-from">{$form.birth_date_from.label}</label>
             </div>
-            <div class="content" id="age-from">
-              {$form.age_from.html}
+            <div class="content" id="birth-date-from">
+              {include file="CRM/common/jcalendar.tpl" elementName='birth_date_from'}
             </div>
             <div class="clear"></div>
+          </div>
+          <div class="crm-section birth-date-to-section">
             <div class="label">
-              <label for="age_to">{ts}...to{/ts}</label>
+              <label for="birth-date-to">{$form.birth_date_to.label}</label>
             </div>
-            <div class="content" id="age-to">
-              {$form.age_to.html}
+            <div class="content" id="birth-date-to">
+              {include file="CRM/common/jcalendar.tpl" elementName='birth_date_to'}
             </div>
             <div class="clear"></div>
           </div>

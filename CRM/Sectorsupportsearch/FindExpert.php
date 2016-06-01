@@ -20,7 +20,6 @@ class CRM_Sectorsupportsearch_FindExpert {
       $errors['sector_id'] = ts("You have to enter at least one criterium to search on otherwise the list will get too long and take too much time");
     }
     self::validateDeceased($fields, $errors);
-    self::validateAgeRange($fields, $errors);
     self::validateDateRanges($fields, $errors);
   }
   /**
@@ -39,8 +38,8 @@ class CRM_Sectorsupportsearch_FindExpert {
         return TRUE;
       }
     }
-    // if either age range or deceased range has been entered return true
-    $enteredFields = array('age_from', 'age_to', 'deceased_date_from', 'deceased_date_to');
+    // if either birth date range or deceased range has been entered return true
+    $enteredFields = array('birth_date_from', 'birth_date_to', 'deceased_date_from', 'deceased_date_to');
     foreach ($enteredFields as $enteredField) {
       if (!empty($fields[$enteredField])) {
         return TRUE;
@@ -73,24 +72,6 @@ class CRM_Sectorsupportsearch_FindExpert {
   }
 
   /**
-   * Method to validate age range
-   *
-   * @param array $fields
-   * @param array $errors
-   * @access private
-   * @static
-   */
-  private static function validateAgeRange($fields, &$errors) {
-    if (isset($fields['age_from']) && isset($fields['age_to'])) {
-      if (!empty($fields['age_to'])) {
-        if ($fields['age_to'] < $fields['age_from']) {
-          $errors['age_to'] = ts('Age to has to be bigger than the age from.');
-       }
-      }
-    }
-  }
-
-  /**
    * Validate date ranges: to date can not be earlier than from date
    *
    * @param array $fields
@@ -105,6 +86,15 @@ class CRM_Sectorsupportsearch_FindExpert {
         $dateFrom = new DateTime($fields['deceased_date_from']);
         if ($dateTo < $dateFrom) {
           $errors['deceased_date_to'] = ts('Deceased date to has to be later than the deceased date from.');
+        }
+      }
+    }
+    if (isset($fields['birth_date_from']) && isset($fields['birth_date_to'])) {
+      if (!empty($fields['birth_date_to']) && !empty($fields['birth_date_from'])) {
+        $dateTo = new DateTime($fields['birth_date_to']);
+        $dateFrom = new DateTime($fields['birth_date_from']);
+        if ($dateTo < $dateFrom) {
+          $errors['birth_date_to'] = ts('Birth date to has to be later than the birth date from.');
         }
       }
     }

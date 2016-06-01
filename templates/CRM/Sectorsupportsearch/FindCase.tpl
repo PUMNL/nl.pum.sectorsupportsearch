@@ -36,7 +36,7 @@
       <th scope="col" title="Select All Rows">{$form.toggleSelect.html}</th>
       {foreach from=$columnHeaders item=header}
         <th scope="col">
-          {if $header.sort}
+          {if $header.sort and $header.name ne "Age"}
             {if $header.name ne "CaseID" and $header.name ne "Case ClientID"}
               {assign var='key' value=$header.sort}
               {$sort->_response.$key.link}

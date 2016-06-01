@@ -89,8 +89,8 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     );
 
     // search on age from .... to
-    $form->add('text', 'age_from', ts('Age Range From'), false);
-    $form->add('text', 'age_to', ts('... to'), false);
+    $form->addDate('birth_date_from', ts('Birth Date From'), FALSE, array('formatType' => 'birth'));
+    $form->addDate('birth_date_to', ts('...to'), FALSE, array('formatType' => 'birth'));
 
     // search on deceased and deceased date range
     $deceasedList = array(
@@ -100,8 +100,8 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     );
     $form->addRadio('deceased_id', ts('Deceased?'), $deceasedList, NULL, '<br />', TRUE);
     $defaults['deceased_id'] = 1;
-    $form->addDate('deceased_date_from', ts('Deceased Date From'), FALSE, array('formatType' => 'custom'));
-    $form->addDate('deceased_date_to', ts('...to'), FALSE, array('formatType' => 'custom'));
+    $form->addDate('deceased_date_from', ts('Deceased Date From'), FALSE, array('formatType' => 'birth'));
+    $form->addDate('deceased_date_to', ts('...to'), FALSE, array('formatType' => 'birth'));
 
     // search on gender
     $genderList = $this->getGenderList();
@@ -133,7 +133,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     $form->setDefaults($defaults);
 
     $form->assign('elements', array('sector_id', 'expertise_id', 'generic_id', 'language_id',
-      'age_from', 'age_to', 'deceased_id', 'deceased_date_from', 'deceased_date_to', 'gender_id',
+      'birth_date_from', 'birth_date_to', 'deceased_id', 'deceased_date_from', 'deceased_date_to', 'gender_id',
       'group_id', 'expert_status_id', 'expert_status_date_from', 'expert_status_date_to', 'cv_mutation_id'));
 
     $form->addButtons(array(array('type' => 'refresh', 'name' => ts('Search'), 'isDefault' => TRUE,),));
@@ -359,8 +359,8 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     $this->addGenderWhereClauses();
     // groups clauses if selected
     $this->addGroupsWhereClauses();
-    // age range clauses if selected
-    $this->addAgeWhereClauses();
+    // birth date range clauses if selected
+    $this->addBirthDateWhereClauses();
     // deceased clauses if selected
     $this->addDeceasedWhereClauses();
     // expert status clauses if selected
@@ -540,47 +540,17 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
   }
 
   /**
-   * Method to add the age where clauses
+   * Method to add the birth date where clauses
    * 
    * @access private
    */
-  private function addAgeWhereClauses() {
-    if (isset($this->_formValues['age_from']) || isset($this->_formValues['age_to'])) {
-      if (!empty($this->_formValues['age_from']) || !empty($this->_formValues['age_to'])) {
-        $birthDates = $this->calculateBirthDatesForAge();
-        $this->_whereIndex++;
-        $fromIndex = $this->_whereIndex;
-        $this->_whereParams[$this->_whereIndex] = array($birthDates['from'], 'String');
-        $this->_whereIndex++;
-        $this->_whereParams[$this->_whereIndex] = array($birthDates['to'], 'String');
-        $this->_whereClauses[] = '(contact_a.birth_date BETWEEN %' . $this->_whereIndex . ' AND %' . $fromIndex . ')';
-      }
+  private function addBirthDateWhereClauses() {
+    if (isset($this->_formValues['birth_date_from']) || isset($this->_formValues['birth_date_to'])) {
+      $this->setDateRangeClauses('birth_date', 'contact_a.birth_date');
     }
   }
 
-  /**
-   * Method to calculate date range for birth date (age comparison)
-   * 
-   * @access private
-   */
-  private function calculateBirthDatesForAge() {
-    $result = array();
-    if (isset($this->_formValues['age_from']) && !empty($this->_formValues['age_from'])) {
-      $fromDate = new DateTime();
-      $ageFromYears = new DateInterval('P'.$this->_formValues['age_from'].'Y');
-      $fromDate->sub($ageFromYears);
-      $result['from'] = $fromDate->format('Y-m-d');
-    }
-    if (isset($this->_formValues['age_to']) && !empty($this->_formValues['age_to'])) {
-      $toDate = new DateTime();
-      $ageToYears = new DateInterval('P'.$this->_formValues['age_to'].'Y');
-      $toDate->sub($ageToYears);
-      $result['to'] = $toDate->format('Y-m-d');
-    }
-    return $result;
-  }
-
-  /**
+ /**
    * Method to add the gender where clauses
    */
   private function addGenderWhereClauses() {
