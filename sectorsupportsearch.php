@@ -162,15 +162,54 @@ function sectorsupportsearch_civicrm_preProcess($formName, &$form) {
  * Implements hook_civicrm_navigationMenu().
  *
  * @link http://wiki.civicrm.org/confluence/display/CRMDOC/hook_civicrm_navigationMenu
- *
-function sectorsupportsearch_civicrm_navigationMenu(&$menu) {
-  _sectorsupportsearch_civix_insert_navigation_menu($menu, NULL, array(
-    'label' => ts('The Page', array('domain' => 'nl.pum.sectorsupportsearch')),
-    'name' => 'the_page',
-    'url' => 'civicrm/the-page',
-    'permission' => 'access CiviReport,access CiviContribute',
-    'operator' => 'OR',
-    'separator' => 0,
-  ));
-  _sectorsupportsearch_civix_navigationMenu($menu);
-} // */
+ */
+function sectorsupportsearch_civicrm_navigationMenu(&$params) {
+  $maxKey = CRM_Sectorsupportsearch_Utils::getMaxMenuKey($params);
+  //NOTE: For some reason the name and label is switched in Civi Core, label = 'Search', name = 'Search...'
+  $menuSearchId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Navigation', 'Search...', 'id', 'name');
+  
+  //Retrieve ID of custom search 'Find Case'
+  $cs_pumcaseshrm_params = array(
+    'version' => 3,
+    'sequential' => 1,
+    'name' => 'CRM_Sectorsupportsearch_Form_Search_FindCase',
+  );
+  $result_cs_pumcaseshrm = civicrm_api('CustomSearch', 'get', $cs_pumcaseshrm_params);
+  
+  if(isset($result_cs_pumcaseshrm['values'][0]['value'])) {
+    _sectorsupportsearch_civix_insert_navigation_menu($params, 'Search...', array(
+      'label' => ts('Find PUM Cases for HRM', array('domain' => 'nl.pum.sectorsupportsearch')),
+      'name' => 'Find PUM Cases for HRM',
+      'url' => 'civicrm/contact/search/custom?csid='.$result_cs_pumcaseshrm['values'][0]['value'].'&reset=1',
+      'permission' => 'access CiviReport,access CiviContribute',
+      'operator' => 'OR',
+      'separator' => 0,
+      'parentID' => $menuSearchId,
+      'navID' => $maxKey+1,
+      'is_active' => '1',
+    ));
+  }
+  
+  //Retrieve ID of custom search 'Find Expert'
+  $cs_pumcontactshrm_params = array(
+    'version' => 3,
+    'sequential' => 1,
+    'name' => 'CRM_Sectorsupportsearch_Form_Search_FindExpert',
+  );
+  $result_cs_pumcontactshrm = civicrm_api('CustomSearch', 'get', $cs_pumcontactshrm_params);
+  
+  if(isset($result_cs_pumcontactshrm['values'][0]['value'])) {
+    _sectorsupportsearch_civix_insert_navigation_menu($params, 'Search...', array(
+      'label' => ts('Find experts by age and status', array('domain' => 'nl.pum.sectorsupportsearch')),
+      'name' => 'Find PUM Contact for HRM',
+      'url' => 'civicrm/contact/search/custom?csid='.$result_cs_pumcontactshrm['values'][0]['value'].'&reset=1',
+      'permission' => 'access CiviReport,access CiviContribute',
+      'operator' => 'OR',
+      'separator' => 0,
+      'parentID' => $menuSearchId,
+      'navID' => $maxKey+1,
+      'is_active' => '1',
+    ));
+  }
+  _sectorsupportsearch_civix_navigationMenu($params);
+}

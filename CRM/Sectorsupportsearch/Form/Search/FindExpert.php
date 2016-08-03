@@ -50,6 +50,8 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     $this->getGenericSkillsList();
     $this->setRequiredCustomTables();
     $this->setRequiredCustomColumns();
+    $this->setActivityTypes();
+    $this->setActivityStatus();
     $this->setValidCaseStatus();
     $this->setValidCaseTypes();
 
@@ -63,7 +65,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
    * @return void
    */
   function buildForm(&$form) {
-    CRM_Utils_System::setTitle(ts('Find PUM Contact for HRM'));
+    CRM_Utils_System::setTitle(ts('Find experts by age and status'));
 
     // search on sector
     $sectorList = $this->getSectorList();
@@ -637,13 +639,14 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
    */
   private function setRestrictions($contactId) {
     try {
-      $activities = civicrm_api3('Activity', 'Getcount', array(
+      $activities = civicrm_api3('Activity', 'getcount', array(
         'activity_type_id' => $this->_restrictionsActivityTypeId,
         'target_contact_id' => $contactId,
         'is_current_revision' => 1,
         'is_deleted' => 0,
         'status_id' => $this->_scheduledActivityStatusValue
       ));
+      
       if ($activities > 0) {
         return 'Yes';
       } else {
