@@ -152,6 +152,9 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     $sectors = civicrm_api3('Segment', 'Get', array('parent_id' => 'null'));
     foreach ($sectors['values'] as $sectorId => $sector) {
       $result[$sectorId] = $sector['label'];
+      if ($sector['is_active'] == 0) {
+        $result[$sectorId] .= ts(' (inactive) ');
+      }
     }
     asort($result);
     return $result;
@@ -230,6 +233,9 @@ class CRM_Sectorsupportsearch_Form_Search_FindExpert extends CRM_Contact_Form_Se
     foreach ($areas['values'] as $areaId => $area) {
       if (!empty($area['parent_id'])) {
         $result[$areaId] = $area['label'];
+        if ($area['is_active'] == 0) {
+          $result[$areaId] .= ts(' (inactive) ');
+        }
       }
     }
     asort($result);

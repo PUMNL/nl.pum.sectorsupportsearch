@@ -104,6 +104,10 @@ class CRM_Sectorsupportsearch_Form_Search_FindCase extends CRM_Contact_Form_Sear
     $sectors = civicrm_api3('Segment', 'Get', array('parent_id' => 'null'));
     foreach ($sectors['values'] as $sectorId => $sector) {
       $result[$sectorId] = $sector['label'];
+      if ($sector['is_active'] == 0) {
+        $result[$sectorId] .= ts(' (inactive) ');
+      }
+
     }
     asort($result);
     return $result;
