@@ -202,7 +202,7 @@ class CRM_Sectorsupportsearch_Form_Search_FindCase extends CRM_Contact_Form_Sear
   function select() {
     return "DISTINCT(cc.id) AS case_id, cc.case_type_id AS case_type_id, ct.label AS case_type, 
       cc.subject AS case_subject, cc.start_date AS case_start_date, cc.end_date AS case_end_date, 
-      cc.status_id AS case_status_id, cs.label AS case_status, exp.display_name AS case_client, exp.id AS case_client_id,
+      cc.status_id AS case_status_id, cs.label AS case_status, exp.display_name AS case_client, exp.id AS case_client_id, exp.id AS contact_id,
 	    sc.id AS case_manager_id, sc.display_name AS case_manager, exp.birth_date AS client_age, 
 	    expdata.".$this->_expStatusColumn." AS client_status";
   }
